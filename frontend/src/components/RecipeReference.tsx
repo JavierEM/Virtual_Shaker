@@ -28,7 +28,7 @@ export const RecipeReference = ({ recipeId }: RecipeReferenceProps) => {
     <div className="recipe-reference">
       <h3>{recipe.name}</h3>
       <p className="recipe-meta">
-        {recipe.method.toUpperCase()} ? {recipe.glassId.replace('-', ' ')} ? Difficulty {recipe.difficulty}
+        {recipe.method.toUpperCase()} - {recipe.glassId.replace(/-/g, ' ')} - Difficulty {recipe.difficulty}
       </p>
       <ul className="ingredient-list">
         {recipe.ingredientRequirements.map((req) => {

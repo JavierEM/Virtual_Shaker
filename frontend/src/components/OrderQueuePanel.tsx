@@ -2,6 +2,13 @@ import { useMemo } from 'react'
 import { useGame } from '../context/GameContext'
 import { RECIPES_BY_ID } from '../data/recipes'
 
+const VENUE_LABELS: Record<string, string> = {
+  dive: 'Dive Bar',
+  tiki: 'Tiki Bar',
+  lounge: 'Hotel Lounge',
+  speakeasy: 'Speakeasy'
+}
+
 export const OrderQueuePanel = () => {
   const { orderQueue, activeTicket, focusTicket, mode } = useGame()
 
@@ -20,7 +27,7 @@ export const OrderQueuePanel = () => {
     return (
       <section className="order-queue creative-empty">
         <h2>The Lab</h2>
-        <p>No orders?experiment freely!</p>
+        <p>No orders. Experiment freely!</p>
       </section>
     )
   }
@@ -36,7 +43,9 @@ export const OrderQueuePanel = () => {
               <button type="button" onClick={() => focusTicket(ticket.id)}>
                 <span className="ticket-title">{recipe?.name ?? 'Unknown Order'}</span>
                 <span className="ticket-meta">
-                  {recipe ? `${recipe.method.toUpperCase()} ? ${recipe.venueUnlock}` : '??'}
+                  {recipe
+                    ? `${recipe.method.toUpperCase()} - ${VENUE_LABELS[recipe.venueUnlock] ?? recipe.venueUnlock}`
+                    : '??'}
                 </span>
               </button>
             </li>

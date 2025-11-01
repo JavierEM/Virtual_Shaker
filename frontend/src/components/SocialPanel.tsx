@@ -33,7 +33,7 @@ export const SocialPanel = () => {
           <p className="leaderboard-status">Unable to load leaderboard.</p>
         )}
         {leaderboardStatus === 'loading' && (
-          <p className="leaderboard-status">Updating leaderboard?</p>
+          <p className="leaderboard-status">Updating leaderboard...</p>
         )}
         <ol>
           {topEntries.map((entry) => (
@@ -60,9 +60,9 @@ export const SocialPanel = () => {
         <div className="matchmaking-status">
           <span>
             {matchmaking?.status === 'matched'
-              ? `Matched with ${matchmaking.opponentName ?? 'opponent'} ? get ready!`
+              ? `Matched with ${matchmaking.opponentName ?? 'opponent'} - get ready!`
               : matchmaking?.status === 'searching'
-              ? 'Searching for the next challenger?'
+              ? 'Searching for the next challenger...'
               : 'Ready when you are.'}
           </span>
           <button type="button" onClick={() => void handleMatchmakingToggle()}>
@@ -73,7 +73,7 @@ export const SocialPanel = () => {
           <div className="coop-status">
             <h4>Bar Brigade Room</h4>
             <p>
-              Room {coopStatus.roomId} ? Bartender {coopStatus.bartenderReady ? 'ready' : 'not ready'} ? Barback{' '}
+              Room {coopStatus.roomId} - Bartender {coopStatus.bartenderReady ? 'ready' : 'not ready'} - Barback{' '}
               {coopStatus.barbackReady ? 'ready' : 'not ready'}
             </p>
             <ul>
