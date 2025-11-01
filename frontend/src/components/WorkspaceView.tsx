@@ -83,7 +83,7 @@ export const WorkspaceView = () => {
       <aside className="workspace-reference">
         <h2>Recipe Book</h2>
         {mode === 'creative' ? (
-          <p>Creative sessions have no recipe?follow your instincts.</p>
+          <p>Creative sessions have no recipe. Follow your instincts.</p>
         ) : (
           <RecipeReference recipeId={activeTicket?.recipeId} />
         )}

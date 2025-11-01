@@ -661,6 +661,7 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGame = (): GameContextValue => {
   const context = useContext(GameContext)
   if (!context) {
