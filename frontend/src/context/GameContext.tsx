@@ -17,7 +17,9 @@ import {
   type LeaderboardEntry,
   type PlayerProfile,
   type MatchmakingState,
-  type MatchmakingMode
+  type MatchmakingMode,
+  type PlayerSession,
+  type CoopStatus
 } from '../types'
 import { GLASSWARE, INGREDIENT_MAP, TOOLS } from '../data/ingredients'
 import { RECIPES, RECIPES_BY_ID } from '../data/recipes'
@@ -39,11 +41,13 @@ interface GameContextValue {
   score: number
   xp: number
   profile: PlayerProfile | null
+  session: PlayerSession | null
   backendError: string | null
   leaderboard: LeaderboardEntry[]
   leaderboardStatus: 'idle' | 'loading' | 'error'
   realtimeConnected: boolean
   matchmaking: MatchmakingState | null
+  coopStatus: CoopStatus | null
   orderQueue: OrderTicket[]
   activeTicket: OrderTicket | null
   activeRecipeName?: string
@@ -129,11 +133,13 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const [xp, setXp] = useState(0)
   const [rushTimeRemaining, setRushTimeRemaining] = useState<number | null>(null)
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
+  const [session, setSession] = useState<PlayerSession | null>(null)
   const [backendError, setBackendError] = useState<string | null>(null)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardStatus, setLeaderboardStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [matchmaking, setMatchmaking] = useState<MatchmakingState | null>(null)
+  const [coopStatus, setCoopStatus] = useState<CoopStatus | null>(null)
   const realtimeRef = useRef<{ close: () => void } | null>(null)
 
   const unlockedVenues = useMemo(() => getUnlockedVenues(xp), [xp])
@@ -238,9 +244,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const refreshLeaderboard = useCallback(async () => {
     setLeaderboardStatus('loading')
     try {
-      const entries = await api.fetchLeaderboard()
-      setLeaderboard(entries)
-      updateMockLeaderboard(entries)
+      const response = await api.fetchLeaderboard(session?.token)
+      setLeaderboard(response.entries)
+      updateMockLeaderboard(response.entries)
       setLeaderboardStatus('idle')
       setBackendError((prev) => (prev && prev.includes('leaderboard') ? null : prev))
     } catch (error) {
@@ -248,17 +254,35 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       const message = error instanceof Error ? error.message : 'Unable to load leaderboard'
       setBackendError(message)
     }
-  }, [])
+  }, [session?.token])
 
   useEffect(() => {
     let cancelled = false
     const bootstrap = async () => {
       try {
-        const guestProfile = await api.signInGuest()
+        const guestSession = await api.signInGuest()
         if (cancelled) return
-        setProfile(guestProfile)
-        setXp(guestProfile.xp)
+        setSession(guestSession)
+        setProfile(guestSession.profile)
+        setXp(guestSession.profile.xp)
         setBackendError(null)
+        try {
+          const leaderboardResponse = await api.fetchLeaderboard(guestSession.token)
+          if (!cancelled) {
+            setLeaderboard(leaderboardResponse.entries)
+            updateMockLeaderboard(leaderboardResponse.entries)
+            setLeaderboardStatus('idle')
+          }
+        } catch (leaderboardError) {
+          if (!cancelled) {
+            const message =
+              leaderboardError instanceof Error
+                ? leaderboardError.message
+                : 'Unable to load leaderboard'
+            setBackendError(message)
+            setLeaderboardStatus('error')
+          }
+        }
       } catch (error) {
         if (cancelled) return
         const message = error instanceof Error ? error.message : 'Unable to connect to backend'
@@ -266,16 +290,16 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       }
     }
     bootstrap()
-    void refreshLeaderboard()
     return () => {
       cancelled = true
     }
-  }, [refreshLeaderboard])
+  }, [])
 
   useEffect(() => {
-    if (!profile) return
+    if (!session) return
 
     const connection = createRealtimeConnection({
+      token: session.token,
       onConnect: () => setRealtimeConnected(true),
       onDisconnect: () => setRealtimeConnected(false),
       onMessage: (message) => {
@@ -288,6 +312,14 @@ export const GameProvider = ({ children }: GameProviderProps) => {
           const payload = message.payload as MatchmakingState
           setMatchmaking(payload)
         }
+        if (message.type === 'rush:clock') {
+          const payload = message.payload as { secondsRemaining: number }
+          setRushTimeRemaining(Math.max(0, Math.round(payload.secondsRemaining)))
+        }
+        if (message.type === 'coop:update') {
+          const payload = message.payload as CoopStatus
+          setCoopStatus(payload)
+        }
       }
     })
 
@@ -295,10 +327,11 @@ export const GameProvider = ({ children }: GameProviderProps) => {
 
     return () => {
       setRealtimeConnected(false)
+      setCoopStatus(null)
       realtimeRef.current?.close()
       realtimeRef.current = null
     }
-  }, [profile])
+  }, [session])
 
   const setMode = useCallback((nextMode: GameMode) => {
     setModeState(nextMode)
@@ -483,8 +516,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       }
       setCreativeArchive((prev) => [creation, ...prev].slice(0, 15))
       void (async () => {
+        if (!session?.token) return
         try {
-          await api.publishCreation({
+          await api.publishCreation(session.token, {
             name: creation.name,
             flavorProfile: creation.flavorProfile,
             ingredients: creation.ingredients
@@ -528,14 +562,17 @@ export const GameProvider = ({ children }: GameProviderProps) => {
 
     void (async () => {
       try {
-        await api.submitCompletedOrder(completed)
-        if (mode === 'rush' && profile) {
-          await api.submitLeaderboardScore({
-            player: profile.displayName,
-            score: breakdown.total,
-            venue: recipe.venueUnlock
-          })
-          await refreshLeaderboard()
+        if (session?.token) {
+          await api.submitCompletedOrder(session.token, completed)
+          if (mode === 'rush' && profile) {
+            await api.submitLeaderboardScore(session.token, {
+              playerId: profile.id,
+              score: breakdown.total,
+              venue: recipe.venueUnlock,
+              mode
+            })
+            await refreshLeaderboard()
+          }
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to sync with backend'
@@ -544,12 +581,16 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     })()
 
     resetWorkspace()
-  }, [activeTicket, describeFlavorProfile, ensureQueue, generateCreativeName, mode, profile, refreshLeaderboard, resetWorkspace, unlockedVenues, workspace])
+  }, [activeTicket, describeFlavorProfile, ensureQueue, generateCreativeName, mode, profile, refreshLeaderboard, resetWorkspace, session, unlockedVenues, workspace])
 
   const startMatchmaking = useCallback(
     async (matchMode: MatchmakingMode) => {
+      if (!session?.token) {
+        setBackendError('Sign-in required for matchmaking')
+        return
+      }
       try {
-        const state = await api.startMatchmaking(matchMode)
+        const state = await api.startMatchmaking(session.token, matchMode)
         setMatchmaking(state)
         setBackendError(null)
       } catch (error) {
@@ -557,21 +598,26 @@ export const GameProvider = ({ children }: GameProviderProps) => {
         setBackendError(message)
       }
     },
-    []
+    [session]
   )
 
   const cancelMatchmaking = useCallback(
     async (matchMode: MatchmakingMode) => {
+      if (!session?.token) return
       try {
-        await api.cancelMatchmaking(matchMode)
-        setMatchmaking((prev) => (prev && prev.mode === matchMode ? { ...prev, status: 'idle', startedAt: undefined, opponentName: undefined } : prev))
+        await api.cancelMatchmaking(session.token, matchMode)
+        setMatchmaking((prev) =>
+          prev && prev.mode === matchMode
+            ? { ...prev, status: 'idle', startedAt: undefined, opponentName: undefined }
+            : prev
+        )
         setBackendError(null)
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to cancel matchmaking'
         setBackendError(message)
       }
     },
-    []
+    [session]
   )
 
   const value: GameContextValue = {
@@ -580,11 +626,13 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     score,
     xp,
     profile,
+    session,
     backendError,
     leaderboard,
     leaderboardStatus,
     realtimeConnected,
     matchmaking,
+    coopStatus,
     orderQueue,
     activeTicket,
     activeRecipeName,

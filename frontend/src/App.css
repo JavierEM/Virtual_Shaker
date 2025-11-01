@@ -450,6 +450,47 @@
   width: auto;
 }
 
+.coop-status {
+  margin-top: 1rem;
+  background: rgba(14, 26, 42, 0.72);
+  border-radius: 12px;
+  border: 1px solid rgba(123, 198, 255, 0.12);
+  padding: 0.75rem 0.85rem;
+}
+
+.coop-status h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(209, 230, 255, 0.68);
+}
+
+.coop-status p {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  color: rgba(223, 239, 255, 0.8);
+}
+
+.coop-status ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.coop-status li {
+  font-size: 0.78rem;
+  color: rgba(223, 239, 255, 0.82);
+}
+
+.coop-status li.done {
+  text-decoration: line-through;
+  color: rgba(160, 214, 255, 0.6);
+}
+
 .order-queue li button {
   width: 100%;
   text-align: left;

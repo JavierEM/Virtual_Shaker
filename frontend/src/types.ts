@@ -119,6 +119,12 @@ export interface PlayerProfile {
   favoriteVenue?: string
 }
 
+export interface PlayerSession {
+  token: string
+  profile: PlayerProfile
+  expiresAt?: number
+}
+
 export type MatchmakingMode = 'rush' | 'head-to-head' | 'co-op'
 
 export interface MatchmakingState {
@@ -140,4 +146,30 @@ export interface LeaderboardSnapshotMessage extends RealtimeMessage<'leaderboard
 
 export interface MatchStatusMessage extends RealtimeMessage<'match:status', MatchmakingState> {}
 
-export type VirtualShakerRealtimeMessage = LeaderboardSnapshotMessage | MatchStatusMessage | RealtimeMessage
+export interface RushClockMessage extends RealtimeMessage<'rush:clock', {
+  secondsRemaining: number
+  matchId?: string
+}> {}
+
+export interface CoopTask {
+  id: string
+  description: string
+  completed: boolean
+}
+
+export interface CoopStatus {
+  roomId: string
+  bartenderReady: boolean
+  barbackReady: boolean
+  tasks: CoopTask[]
+  updatedAt: number
+}
+
+export interface CoopUpdateMessage extends RealtimeMessage<'coop:update', CoopStatus> {}
+
+export type VirtualShakerRealtimeMessage =
+  | LeaderboardSnapshotMessage
+  | MatchStatusMessage
+  | RushClockMessage
+  | CoopUpdateMessage
+  | RealtimeMessage

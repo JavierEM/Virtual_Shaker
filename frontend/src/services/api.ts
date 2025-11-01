@@ -1,12 +1,17 @@
-import { API_BASE_URL, isMockBackend } from '../config'
+import { API_BASE_URL, USE_MOCK_BACKEND } from '../config'
 import { updateMockLeaderboard } from './realtime'
 import type {
-  CompletedOrder,
   LeaderboardEntry,
   MatchmakingMode,
-  MatchmakingState,
-  PlayerProfile
+  PlayerSession
 } from '../types'
+import type {
+  AuthContract,
+  LabContract,
+  LeaderboardContract,
+  MatchmakingContract,
+  OrdersContract
+} from './contracts'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
@@ -37,9 +42,9 @@ const request = async <TResponse, TBody = unknown>(
   path: string,
   { method = 'GET', body, token, signal }: ApiOptions<TBody> = {}
 ): Promise<TResponse> => {
-  if (isMockBackend) {
+  if (USE_MOCK_BACKEND) {
     await mockDelay(150)
-    return mockRequest<TResponse>(path, { method, body })
+    return mockRequest<TResponse>(path, { method, body, token })
   }
 
   const headers: HeadersInit = {
@@ -76,16 +81,20 @@ const request = async <TResponse, TBody = unknown>(
 
 // Mock backend responses so the front end is functional without a server
 interface MockState {
-  profile: PlayerProfile
+  session: PlayerSession
   leaderboard: LeaderboardEntry[]
 }
 
 const mockState: MockState = {
-  profile: {
-    id: 'guest-001',
-    displayName: 'Guest Bartender',
-    xp: 0,
-    favoriteVenue: 'dive'
+  session: {
+    token: 'mock-session-token',
+    profile: {
+      id: 'guest-001',
+      displayName: 'Guest Bartender',
+      xp: 0,
+      favoriteVenue: 'dive'
+    },
+    expiresAt: Date.now() + 1000 * 60 * 60
   },
   leaderboard: [
     { player: 'NovaMix', score: 18750, mode: 'rush', achievedAt: Date.now() - 86_400_000, venue: 'speakeasy', rank: 1 },
@@ -100,15 +109,15 @@ const mockRequest = async <TResponse, TBody = unknown>(
 ): Promise<TResponse> => {
   switch (path) {
     case '/auth/guest':
-      return mockState.profile as unknown as TResponse
+      return mockState.session as unknown as TResponse
     case '/leaderboard/rush':
-      return mockState.leaderboard as unknown as TResponse
+      return { entries: mockState.leaderboard } as unknown as TResponse
     case '/leaderboard/submit': {
-      const body = options.body as { score: number; player: string; venue: string }
+      const body = options.body as LeaderboardContract.SubmitRequest
       const newEntry: LeaderboardEntry = {
-        player: body.player,
+        player: mockState.session.profile.displayName,
         score: body.score,
-        mode: 'rush',
+        mode: body.mode,
         achievedAt: Date.now(),
         venue: body.venue
       }
@@ -117,22 +126,31 @@ const mockRequest = async <TResponse, TBody = unknown>(
         .map((entry, index) => ({ ...entry, rank: index + 1 }))
         .slice(0, 20)
       updateMockLeaderboard(mockState.leaderboard)
-      return { success: true } as unknown as TResponse
+      const rank = mockState.leaderboard.find((entry) => entry.player === newEntry.player && entry.score === newEntry.score)?.rank
+      return { success: true, rank } as unknown as TResponse
     }
     case '/orders/complete': {
-      const body = options.body as CompletedOrder
-      mockState.profile = {
-        ...mockState.profile,
-        xp: mockState.profile.xp + body.score.total
+      const body = options.body as OrdersContract.CompleteRequest
+      mockState.session = {
+        ...mockState.session,
+        profile: {
+          ...mockState.session.profile,
+          xp: mockState.session.profile.xp + body.score.total
+        }
       }
-      return { success: true } as unknown as TResponse
+      return { success: true, awardedXp: body.score.total } as unknown as TResponse
     }
     case '/lab/publish':
-      return { success: true } as unknown as TResponse
+      return {
+        success: true,
+        recipeId: `lab-${Date.now()}`,
+        shareUrl: 'https://virtualshaker.com/community/recipes/lab-' + Date.now()
+      } as unknown as TResponse
     case '/matchmaking/search':
       return {
-        mode: (options.body as { mode: MatchmakingMode }).mode,
-        status: 'searching'
+        mode: (options.body as MatchmakingContract.SearchRequest).mode,
+        status: 'searching',
+        startedAt: Date.now()
       } as unknown as TResponse
     case '/matchmaking/cancel':
       return { success: true } as unknown as TResponse
@@ -142,16 +160,25 @@ const mockRequest = async <TResponse, TBody = unknown>(
 }
 
 export const api = {
-  signInGuest: () => request<PlayerProfile>('/auth/guest', { method: 'POST' }),
-  fetchLeaderboard: () => request<LeaderboardEntry[]>('/leaderboard/rush'),
-  submitLeaderboardScore: (entry: { player: string; score: number; venue: string }) =>
-    request<{ success: boolean }>('/leaderboard/submit', { method: 'POST', body: entry }),
-  submitCompletedOrder: (order: CompletedOrder) =>
-    request<{ success: boolean }>('/orders/complete', { method: 'POST', body: order }),
-  publishCreation: (payload: { name: string; flavorProfile: string; ingredients: string[] }) =>
-    request<{ success: boolean }>('/lab/publish', { method: 'POST', body: payload }),
-  startMatchmaking: (mode: MatchmakingMode) =>
-    request<MatchmakingState>('/matchmaking/search', { method: 'POST', body: { mode } }),
-  cancelMatchmaking: (mode: MatchmakingMode) =>
-    request<{ success: boolean }>('/matchmaking/cancel', { method: 'POST', body: { mode } })
+  signInGuest: () => request<AuthContract.GuestResponse>('/auth/guest', { method: 'POST' }),
+  fetchLeaderboard: (token?: string) =>
+    request<LeaderboardContract.ListResponse>('/leaderboard/rush', { method: 'GET', token }),
+  submitLeaderboardScore: (token: string, entry: LeaderboardContract.SubmitRequest) =>
+    request<LeaderboardContract.SubmitResponse>('/leaderboard/submit', { method: 'POST', body: entry, token }),
+  submitCompletedOrder: (token: string, order: OrdersContract.CompleteRequest) =>
+    request<OrdersContract.CompleteResponse>('/orders/complete', { method: 'POST', body: order, token }),
+  publishCreation: (token: string, payload: LabContract.PublishRequest) =>
+    request<LabContract.PublishResponse>('/lab/publish', { method: 'POST', body: payload, token }),
+  startMatchmaking: (token: string, mode: MatchmakingMode) =>
+    request<MatchmakingContract.SearchResponse>('/matchmaking/search', {
+      method: 'POST',
+      body: { mode } satisfies MatchmakingContract.SearchRequest,
+      token
+    }),
+  cancelMatchmaking: (token: string, mode: MatchmakingMode) =>
+    request<MatchmakingContract.CancelResponse>('/matchmaking/cancel', {
+      method: 'POST',
+      body: { mode } satisfies MatchmakingContract.CancelRequest,
+      token
+    })
 }

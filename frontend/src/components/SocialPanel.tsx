@@ -8,7 +8,8 @@ export const SocialPanel = () => {
     refreshLeaderboard,
     matchmaking,
     startMatchmaking,
-    cancelMatchmaking
+    cancelMatchmaking,
+    coopStatus
   } = useGame()
 
   const isSearching = matchmaking?.status === 'searching'
@@ -68,6 +69,22 @@ export const SocialPanel = () => {
             {isSearching ? 'Cancel Search' : 'Find Bar Battle'}
           </button>
         </div>
+        {coopStatus && (
+          <div className="coop-status">
+            <h4>Bar Brigade Room</h4>
+            <p>
+              Room {coopStatus.roomId} ? Bartender {coopStatus.bartenderReady ? 'ready' : 'not ready'} ? Barback{' '}
+              {coopStatus.barbackReady ? 'ready' : 'not ready'}
+            </p>
+            <ul>
+              {coopStatus.tasks.map((task) => (
+                <li key={task.id} className={task.completed ? 'done' : ''}>
+                  {task.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </section>
   )
