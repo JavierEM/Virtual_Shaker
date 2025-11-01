@@ -1,0 +1,586 @@
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 1.5rem 2.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  color: #f5f7fa;
+}
+
+.game-hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  padding: 1.5rem 1.75rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(18, 32, 53, 0.85), rgba(32, 55, 92, 0.78));
+  border: 1px solid rgba(123, 198, 255, 0.18);
+  box-shadow: 0 25px 35px rgba(10, 20, 38, 0.35);
+  backdrop-filter: blur(18px);
+}
+
+.game-hud h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 0.04em;
+}
+
+.hud-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: rgba(235, 245, 255, 0.72);
+}
+
+.hud-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.hud-group.player-block {
+  gap: 0.5rem;
+}
+
+.hud-group.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(209, 230, 255, 0.64);
+}
+
+.metric-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.connection-status {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.connection-status.online {
+  background: rgba(76, 217, 100, 0.18);
+  border: 1px solid rgba(76, 217, 100, 0.45);
+  color: rgba(163, 255, 187, 0.95);
+}
+
+.connection-status.offline {
+  background: rgba(255, 95, 87, 0.15);
+  border: 1px solid rgba(255, 95, 87, 0.35);
+  color: rgba(255, 175, 170, 0.9);
+}
+
+.rush-timer.warning .metric-value {
+  color: #ffb347;
+}
+
+.venue-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.venue-badge {
+  padding: 0.4rem 0.7rem;
+  background: rgba(91, 185, 255, 0.2);
+  border-radius: 999px;
+  border: 1px solid rgba(91, 185, 255, 0.4);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.hud-group.backend-error {
+  background: rgba(255, 107, 107, 0.08);
+  border-radius: 14px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.hud-group.backend-error .error-message {
+  font-size: 0.8rem;
+  color: rgba(255, 189, 189, 0.95);
+}
+
+.mode-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.mode-selector button {
+  background: rgba(13, 25, 40, 0.75);
+  border: 1px solid rgba(123, 198, 255, 0.15);
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: rgba(240, 248, 255, 0.85);
+}
+
+.mode-selector button.active {
+  background: linear-gradient(135deg, rgba(40, 91, 150, 0.95), rgba(97, 205, 255, 0.75));
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 15px 25px rgba(63, 145, 215, 0.35);
+}
+
+.mode-title {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.mode-description {
+  font-size: 0.85rem;
+  color: rgba(235, 245, 255, 0.72);
+}
+
+.gameplay-area {
+  display: grid;
+  grid-template-columns: 320px 1fr 360px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.panel.right-column {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.panel.right-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel.right-column::-webkit-scrollbar-thumb {
+  background: rgba(91, 185, 255, 0.35);
+  border-radius: 999px;
+}
+
+.station,
+.workspace-board,
+.workspace-reference,
+.order-queue,
+.completed-orders,
+.creative-archive,
+.social-panel {
+  background: rgba(13, 23, 36, 0.72);
+  border: 1px solid rgba(123, 198, 255, 0.15);
+  border-radius: 18px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 18px 30px rgba(5, 12, 22, 0.35);
+  backdrop-filter: blur(16px);
+}
+
+.station header h2,
+.order-queue h2,
+.completed-orders h2,
+.creative-archive h2,
+.workspace-board header h2,
+.workspace-reference h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+}
+
+.station header p,
+.workspace-board header p {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(223, 239, 255, 0.64);
+}
+
+.station-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.top-shelf .station-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.station-grid.utilities {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.top-shelf-column + .top-shelf-column {
+  margin-top: 0.75rem;
+}
+
+.top-shelf-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.top-shelf-column h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(210, 232, 255, 0.68);
+}
+
+.ingredient-card {
+  width: 100%;
+  background: rgba(21, 36, 54, 0.9);
+  border: 1px solid rgba(123, 198, 255, 0.2);
+  border-radius: 16px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.ingredient-card .ingredient-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.ingredient-card .ingredient-detail {
+  font-size: 0.75rem;
+  color: rgba(205, 227, 255, 0.7);
+}
+
+.ingredient-card.active {
+  border-color: rgba(97, 205, 255, 0.8);
+  box-shadow: 0 0 0 1px rgba(97, 205, 255, 0.6);
+}
+
+.station-actions {
+  margin-top: 0.85rem;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+}
+
+.workspace-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.workspace-section {
+  background: rgba(8, 16, 26, 0.65);
+  border-radius: 14px;
+  padding: 0.8rem;
+  border: 1px solid rgba(91, 185, 255, 0.1);
+}
+
+.workspace-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(210, 232, 255, 0.7);
+}
+
+.workspace-section p,
+.workspace-section ol,
+.workspace-section ul {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(227, 241, 255, 0.82);
+  padding-left: 1.1rem;
+}
+
+.workspace-section ol,
+.workspace-section ul {
+  padding-left: 1.1rem;
+}
+
+.workspace-note {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: rgba(255, 191, 105, 0.85);
+}
+
+.workspace-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.workspace-controls button {
+  flex: 1;
+}
+
+.workspace-reference {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recipe-reference .ingredient-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.recipe-reference .ingredient-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.recipe-meta {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(209, 230, 255, 0.68);
+}
+
+.recipe-garnish {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+}
+
+.recipe-notes {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: rgba(209, 230, 255, 0.75);
+}
+
+.order-queue ul,
+.completed-orders ul,
+.creative-archive ul {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.social-panel .leaderboard,
+.social-panel .multiplayer-hooks {
+  background: rgba(10, 18, 30, 0.75);
+  border-radius: 14px;
+  border: 1px solid rgba(123, 198, 255, 0.12);
+  padding: 0.9rem 1rem;
+  margin-top: 0.85rem;
+}
+
+.social-panel .leaderboard-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 200, 128, 0.85);
+}
+
+.social-panel h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(209, 230, 255, 0.68);
+}
+
+.social-panel ol,
+.social-panel ul {
+  margin: 0.6rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.82rem;
+  color: rgba(223, 239, 255, 0.82);
+}
+
+.social-panel ol li,
+.social-panel ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.social-panel .player {
+  font-weight: 600;
+}
+
+.social-panel .score {
+  font-variant-numeric: tabular-nums;
+  color: rgba(90, 200, 250, 0.85);
+}
+
+.social-panel button {
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.matchmaking-status {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: rgba(223, 239, 255, 0.82);
+}
+
+.matchmaking-status button {
+  align-self: flex-start;
+  width: auto;
+}
+
+.coop-status {
+  margin-top: 1rem;
+  background: rgba(14, 26, 42, 0.72);
+  border-radius: 12px;
+  border: 1px solid rgba(123, 198, 255, 0.12);
+  padding: 0.75rem 0.85rem;
+}
+
+.coop-status h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(209, 230, 255, 0.68);
+}
+
+.coop-status p {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  color: rgba(223, 239, 255, 0.8);
+}
+
+.coop-status ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.coop-status li {
+  font-size: 0.78rem;
+  color: rgba(223, 239, 255, 0.82);
+}
+
+.coop-status li.done {
+  text-decoration: line-through;
+  color: rgba(160, 214, 255, 0.6);
+}
+
+.order-queue li button {
+  width: 100%;
+  text-align: left;
+  background: rgba(17, 31, 47, 0.85);
+  border-radius: 14px;
+  border: 1px solid rgba(91, 185, 255, 0.12);
+}
+
+.order-queue li.active button {
+  border-color: rgba(90, 200, 250, 0.5);
+  background: rgba(46, 98, 153, 0.85);
+}
+
+.ticket-title {
+  display: block;
+  font-weight: 600;
+}
+
+.ticket-meta {
+  font-size: 0.78rem;
+  color: rgba(201, 224, 255, 0.68);
+}
+
+.order-summary {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.order-breakdown {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: rgba(201, 224, 255, 0.7);
+}
+
+.order-mistakes {
+  margin: 0.45rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 150, 135, 0.85);
+}
+
+.creative-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.creative-profile {
+  font-size: 0.78rem;
+  color: rgba(201, 224, 255, 0.68);
+}
+
+.creative-ingredients {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: rgba(223, 239, 255, 0.78);
+}
+
+@media (max-width: 1200px) {
+  .game-hud {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gameplay-area {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .panel.right-column {
+    max-height: unset;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    padding: 1.25rem;
+  }
+
+  .mode-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .game-hud {
+    grid-template-columns: 1fr;
+  }
+}
