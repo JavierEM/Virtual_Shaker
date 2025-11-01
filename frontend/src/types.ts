@@ -140,16 +140,16 @@ export interface RealtimeMessage<TType extends string = string, TPayload = unkno
   payload: TPayload
 }
 
-export interface LeaderboardSnapshotMessage extends RealtimeMessage<'leaderboard:snapshot', {
+export type LeaderboardSnapshotMessage = RealtimeMessage<'leaderboard:snapshot', {
   entries: LeaderboardEntry[]
-}> {}
+}>
 
-export interface MatchStatusMessage extends RealtimeMessage<'match:status', MatchmakingState> {}
+export type MatchStatusMessage = RealtimeMessage<'match:status', MatchmakingState>
 
-export interface RushClockMessage extends RealtimeMessage<'rush:clock', {
+export type RushClockMessage = RealtimeMessage<'rush:clock', {
   secondsRemaining: number
   matchId?: string
-}> {}
+}>
 
 export interface CoopTask {
   id: string
@@ -165,7 +165,7 @@ export interface CoopStatus {
   updatedAt: number
 }
 
-export interface CoopUpdateMessage extends RealtimeMessage<'coop:update', CoopStatus> {}
+export type CoopUpdateMessage = RealtimeMessage<'coop:update', CoopStatus>
 
 export type VirtualShakerRealtimeMessage =
   | LeaderboardSnapshotMessage

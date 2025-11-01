@@ -6,11 +6,18 @@ import type {
   PlayerSession
 } from '../types'
 import type {
-  AuthContract,
-  LabContract,
-  LeaderboardContract,
-  MatchmakingContract,
-  OrdersContract
+  AuthGuestResponse,
+  LabPublishRequest,
+  LabPublishResponse,
+  LeaderboardListResponse,
+  LeaderboardSubmitRequest,
+  LeaderboardSubmitResponse,
+  MatchmakingCancelRequest,
+  MatchmakingCancelResponse,
+  MatchmakingSearchRequest,
+  MatchmakingSearchResponse,
+  OrdersCompleteRequest,
+  OrdersCompleteResponse
 } from './contracts'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -66,7 +73,7 @@ const request = async <TResponse, TBody = unknown>(
     try {
       const data: ApiErrorShape = await response.json()
       message = data.message ?? data.error ?? message
-    } catch (error) {
+    } catch {
       // ignore
     }
     throw new ApiError(message, response.status)
@@ -113,7 +120,7 @@ const mockRequest = async <TResponse, TBody = unknown>(
     case '/leaderboard/rush':
       return { entries: mockState.leaderboard } as unknown as TResponse
     case '/leaderboard/submit': {
-      const body = options.body as LeaderboardContract.SubmitRequest
+      const body = options.body as LeaderboardSubmitRequest
       const newEntry: LeaderboardEntry = {
         player: mockState.session.profile.displayName,
         score: body.score,
@@ -130,7 +137,7 @@ const mockRequest = async <TResponse, TBody = unknown>(
       return { success: true, rank } as unknown as TResponse
     }
     case '/orders/complete': {
-      const body = options.body as OrdersContract.CompleteRequest
+      const body = options.body as OrdersCompleteRequest
       mockState.session = {
         ...mockState.session,
         profile: {
@@ -148,7 +155,7 @@ const mockRequest = async <TResponse, TBody = unknown>(
       } as unknown as TResponse
     case '/matchmaking/search':
       return {
-        mode: (options.body as MatchmakingContract.SearchRequest).mode,
+        mode: (options.body as MatchmakingSearchRequest).mode,
         status: 'searching',
         startedAt: Date.now()
       } as unknown as TResponse
@@ -160,25 +167,25 @@ const mockRequest = async <TResponse, TBody = unknown>(
 }
 
 export const api = {
-  signInGuest: () => request<AuthContract.GuestResponse>('/auth/guest', { method: 'POST' }),
+  signInGuest: () => request<AuthGuestResponse>('/auth/guest', { method: 'POST' }),
   fetchLeaderboard: (token?: string) =>
-    request<LeaderboardContract.ListResponse>('/leaderboard/rush', { method: 'GET', token }),
-  submitLeaderboardScore: (token: string, entry: LeaderboardContract.SubmitRequest) =>
-    request<LeaderboardContract.SubmitResponse>('/leaderboard/submit', { method: 'POST', body: entry, token }),
-  submitCompletedOrder: (token: string, order: OrdersContract.CompleteRequest) =>
-    request<OrdersContract.CompleteResponse>('/orders/complete', { method: 'POST', body: order, token }),
-  publishCreation: (token: string, payload: LabContract.PublishRequest) =>
-    request<LabContract.PublishResponse>('/lab/publish', { method: 'POST', body: payload, token }),
+    request<LeaderboardListResponse>('/leaderboard/rush', { method: 'GET', token }),
+  submitLeaderboardScore: (token: string, entry: LeaderboardSubmitRequest) =>
+    request<LeaderboardSubmitResponse>('/leaderboard/submit', { method: 'POST', body: entry, token }),
+  submitCompletedOrder: (token: string, order: OrdersCompleteRequest) =>
+    request<OrdersCompleteResponse>('/orders/complete', { method: 'POST', body: order, token }),
+  publishCreation: (token: string, payload: LabPublishRequest) =>
+    request<LabPublishResponse>('/lab/publish', { method: 'POST', body: payload, token }),
   startMatchmaking: (token: string, mode: MatchmakingMode) =>
-    request<MatchmakingContract.SearchResponse>('/matchmaking/search', {
+    request<MatchmakingSearchResponse>('/matchmaking/search', {
       method: 'POST',
-      body: { mode } satisfies MatchmakingContract.SearchRequest,
+      body: { mode } satisfies MatchmakingSearchRequest,
       token
     }),
   cancelMatchmaking: (token: string, mode: MatchmakingMode) =>
-    request<MatchmakingContract.CancelResponse>('/matchmaking/cancel', {
+    request<MatchmakingCancelResponse>('/matchmaking/cancel', {
       method: 'POST',
-      body: { mode } satisfies MatchmakingContract.CancelRequest,
+      body: { mode } satisfies MatchmakingCancelRequest,
       token
     })
 }

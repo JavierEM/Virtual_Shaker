@@ -7,67 +7,57 @@ import type {
   PlayerProfile
 } from '../types'
 
-export namespace AuthContract {
-  export interface GuestResponse {
-    token: string
-    profile: PlayerProfile
-    expiresAt?: number
-  }
+export interface AuthGuestResponse {
+  token: string
+  profile: PlayerProfile
+  expiresAt?: number
 }
 
-export namespace LeaderboardContract {
-  export interface ListResponse {
-    entries: LeaderboardEntry[]
-  }
-
-  export interface SubmitRequest {
-    playerId: string
-    score: number
-    venue: string
-    mode: GameMode
-  }
-
-  export interface SubmitResponse {
-    success: boolean
-    rank?: number
-  }
+export interface LeaderboardListResponse {
+  entries: LeaderboardEntry[]
 }
 
-export namespace OrdersContract {
-  export type CompleteRequest = CompletedOrder
-
-  export interface CompleteResponse {
-    success: boolean
-    awardedXp: number
-  }
+export interface LeaderboardSubmitRequest {
+  playerId: string
+  score: number
+  venue: string
+  mode: GameMode
 }
 
-export namespace LabContract {
-  export interface PublishRequest {
-    name: string
-    flavorProfile: string
-    ingredients: string[]
-  }
-
-  export interface PublishResponse {
-    success: boolean
-    recipeId: string
-    shareUrl?: string
-  }
+export interface LeaderboardSubmitResponse {
+  success: boolean
+  rank?: number
 }
 
-export namespace MatchmakingContract {
-  export interface SearchRequest {
-    mode: MatchmakingMode
-  }
+export type OrdersCompleteRequest = CompletedOrder
 
-  export type SearchResponse = MatchmakingState
+export interface OrdersCompleteResponse {
+  success: boolean
+  awardedXp: number
+}
 
-  export interface CancelRequest {
-    mode: MatchmakingMode
-  }
+export interface LabPublishRequest {
+  name: string
+  flavorProfile: string
+  ingredients: string[]
+}
 
-  export interface CancelResponse {
-    success: boolean
-  }
+export interface LabPublishResponse {
+  success: boolean
+  recipeId: string
+  shareUrl?: string
+}
+
+export interface MatchmakingSearchRequest {
+  mode: MatchmakingMode
+}
+
+export type MatchmakingSearchResponse = MatchmakingState
+
+export interface MatchmakingCancelRequest {
+  mode: MatchmakingMode
+}
+
+export interface MatchmakingCancelResponse {
+  success: boolean
 }
