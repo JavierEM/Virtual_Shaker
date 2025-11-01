@@ -108,4 +108,36 @@ export interface LeaderboardEntry {
   mode: GameMode
   achievedAt: number
   venue: string
+  rank?: number
 }
+
+export interface PlayerProfile {
+  id: string
+  displayName: string
+  avatarUrl?: string
+  xp: number
+  favoriteVenue?: string
+}
+
+export type MatchmakingMode = 'rush' | 'head-to-head' | 'co-op'
+
+export interface MatchmakingState {
+  mode: MatchmakingMode
+  status: 'idle' | 'searching' | 'matched' | 'in-progress'
+  opponentName?: string
+  matchId?: string
+  startedAt?: number
+}
+
+export interface RealtimeMessage<TType extends string = string, TPayload = unknown> {
+  type: TType
+  payload: TPayload
+}
+
+export interface LeaderboardSnapshotMessage extends RealtimeMessage<'leaderboard:snapshot', {
+  entries: LeaderboardEntry[]
+}> {}
+
+export interface MatchStatusMessage extends RealtimeMessage<'match:status', MatchmakingState> {}
+
+export type VirtualShakerRealtimeMessage = LeaderboardSnapshotMessage | MatchStatusMessage | RealtimeMessage

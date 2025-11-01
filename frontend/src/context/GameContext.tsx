@@ -1,14 +1,29 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
 import {
   type CompletedOrder,
   type GameMode,
   type OrderTicket,
   type Technique,
-  type WorkspaceState
+  type WorkspaceState,
+  type LeaderboardEntry,
+  type PlayerProfile,
+  type MatchmakingState,
+  type MatchmakingMode
 } from '../types'
 import { GLASSWARE, INGREDIENT_MAP, TOOLS } from '../data/ingredients'
 import { RECIPES, RECIPES_BY_ID } from '../data/recipes'
 import { evaluateWorkspace } from '../utils/scoring'
+import { api } from '../services/api'
+import { createRealtimeConnection, updateMockLeaderboard } from '../services/realtime'
 
 interface CreativeCreation {
   id: string
@@ -23,6 +38,12 @@ interface GameContextValue {
   setMode: (mode: GameMode) => void
   score: number
   xp: number
+  profile: PlayerProfile | null
+  backendError: string | null
+  leaderboard: LeaderboardEntry[]
+  leaderboardStatus: 'idle' | 'loading' | 'error'
+  realtimeConnected: boolean
+  matchmaking: MatchmakingState | null
   orderQueue: OrderTicket[]
   activeTicket: OrderTicket | null
   activeRecipeName?: string
@@ -32,6 +53,9 @@ interface GameContextValue {
   creativeArchive: CreativeCreation[]
   rushTimeRemaining: number | null
   availableVenues: string[]
+  refreshLeaderboard: () => Promise<void>
+  startMatchmaking: (mode: MatchmakingMode) => Promise<void>
+  cancelMatchmaking: (mode: MatchmakingMode) => Promise<void>
   selectGlass: (glassId: string) => void
   addIngredient: (ingredientId: string) => void
   addGarnish: (garnishId: string) => void
@@ -104,6 +128,13 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const [score, setScore] = useState(0)
   const [xp, setXp] = useState(0)
   const [rushTimeRemaining, setRushTimeRemaining] = useState<number | null>(null)
+  const [profile, setProfile] = useState<PlayerProfile | null>(null)
+  const [backendError, setBackendError] = useState<string | null>(null)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [leaderboardStatus, setLeaderboardStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [realtimeConnected, setRealtimeConnected] = useState(false)
+  const [matchmaking, setMatchmaking] = useState<MatchmakingState | null>(null)
+  const realtimeRef = useRef<{ close: () => void } | null>(null)
 
   const unlockedVenues = useMemo(() => getUnlockedVenues(xp), [xp])
 
@@ -203,6 +234,71 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       window.clearInterval(timer)
     }
   }, [rushTimeRemaining])
+
+  const refreshLeaderboard = useCallback(async () => {
+    setLeaderboardStatus('loading')
+    try {
+      const entries = await api.fetchLeaderboard()
+      setLeaderboard(entries)
+      updateMockLeaderboard(entries)
+      setLeaderboardStatus('idle')
+      setBackendError((prev) => (prev && prev.includes('leaderboard') ? null : prev))
+    } catch (error) {
+      setLeaderboardStatus('error')
+      const message = error instanceof Error ? error.message : 'Unable to load leaderboard'
+      setBackendError(message)
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const bootstrap = async () => {
+      try {
+        const guestProfile = await api.signInGuest()
+        if (cancelled) return
+        setProfile(guestProfile)
+        setXp(guestProfile.xp)
+        setBackendError(null)
+      } catch (error) {
+        if (cancelled) return
+        const message = error instanceof Error ? error.message : 'Unable to connect to backend'
+        setBackendError(message)
+      }
+    }
+    bootstrap()
+    void refreshLeaderboard()
+    return () => {
+      cancelled = true
+    }
+  }, [refreshLeaderboard])
+
+  useEffect(() => {
+    if (!profile) return
+
+    const connection = createRealtimeConnection({
+      onConnect: () => setRealtimeConnected(true),
+      onDisconnect: () => setRealtimeConnected(false),
+      onMessage: (message) => {
+        if (message.type === 'leaderboard:snapshot') {
+          const payload = message.payload as { entries: LeaderboardEntry[] }
+          setLeaderboard(payload.entries)
+          updateMockLeaderboard(payload.entries)
+        }
+        if (message.type === 'match:status') {
+          const payload = message.payload as MatchmakingState
+          setMatchmaking(payload)
+        }
+      }
+    })
+
+    realtimeRef.current = connection as unknown as { close: () => void }
+
+    return () => {
+      setRealtimeConnected(false)
+      realtimeRef.current?.close()
+      realtimeRef.current = null
+    }
+  }, [profile])
 
   const setMode = useCallback((nextMode: GameMode) => {
     setModeState(nextMode)
@@ -386,6 +482,18 @@ export const GameProvider = ({ children }: GameProviderProps) => {
         createdAt: Date.now()
       }
       setCreativeArchive((prev) => [creation, ...prev].slice(0, 15))
+      void (async () => {
+        try {
+          await api.publishCreation({
+            name: creation.name,
+            flavorProfile: creation.flavorProfile,
+            ingredients: creation.ingredients
+          })
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to publish creation'
+          setBackendError(message)
+        }
+      })()
       resetWorkspace()
       return
     }
@@ -403,6 +511,7 @@ export const GameProvider = ({ children }: GameProviderProps) => {
 
     setScore((prev) => prev + breakdown.total)
     setXp((prev) => prev + breakdown.total)
+    setProfile((prev) => (prev ? { ...prev, xp: prev.xp + breakdown.total } : prev))
     const completed: CompletedOrder = {
       ticket: activeTicket,
       recipe,
@@ -417,14 +526,65 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       return ensureQueue(mode, remaining, unlockedVenues)
     })
 
+    void (async () => {
+      try {
+        await api.submitCompletedOrder(completed)
+        if (mode === 'rush' && profile) {
+          await api.submitLeaderboardScore({
+            player: profile.displayName,
+            score: breakdown.total,
+            venue: recipe.venueUnlock
+          })
+          await refreshLeaderboard()
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to sync with backend'
+        setBackendError(message)
+      }
+    })()
+
     resetWorkspace()
-  }, [activeTicket, describeFlavorProfile, ensureQueue, generateCreativeName, mode, resetWorkspace, unlockedVenues, workspace])
+  }, [activeTicket, describeFlavorProfile, ensureQueue, generateCreativeName, mode, profile, refreshLeaderboard, resetWorkspace, unlockedVenues, workspace])
+
+  const startMatchmaking = useCallback(
+    async (matchMode: MatchmakingMode) => {
+      try {
+        const state = await api.startMatchmaking(matchMode)
+        setMatchmaking(state)
+        setBackendError(null)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to start matchmaking'
+        setBackendError(message)
+      }
+    },
+    []
+  )
+
+  const cancelMatchmaking = useCallback(
+    async (matchMode: MatchmakingMode) => {
+      try {
+        await api.cancelMatchmaking(matchMode)
+        setMatchmaking((prev) => (prev && prev.mode === matchMode ? { ...prev, status: 'idle', startedAt: undefined, opponentName: undefined } : prev))
+        setBackendError(null)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to cancel matchmaking'
+        setBackendError(message)
+      }
+    },
+    []
+  )
 
   const value: GameContextValue = {
     mode,
     setMode,
     score,
     xp,
+    profile,
+    backendError,
+    leaderboard,
+    leaderboardStatus,
+    realtimeConnected,
+    matchmaking,
     orderQueue,
     activeTicket,
     activeRecipeName,
@@ -434,6 +594,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     creativeArchive,
     rushTimeRemaining,
     availableVenues: unlockedVenues,
+    refreshLeaderboard,
+    startMatchmaking,
+    cancelMatchmaking,
     selectGlass,
     addIngredient,
     addGarnish,

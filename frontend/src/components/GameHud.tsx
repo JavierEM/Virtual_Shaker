@@ -15,7 +15,17 @@ const formatTimer = (seconds: number) => {
 }
 
 export const GameHud = () => {
-  const { mode, score, xp, rushTimeRemaining, activeRecipeName, availableVenues } = useGame()
+  const {
+    mode,
+    score,
+    xp,
+    rushTimeRemaining,
+    activeRecipeName,
+    availableVenues,
+    profile,
+    realtimeConnected,
+    backendError
+  } = useGame()
 
   const venueBadges = useMemo(
     () =>
@@ -32,6 +42,15 @@ export const GameHud = () => {
       <div className="hud-group">
         <h1>Virtual Shaker</h1>
         <p className="hud-subtitle">Craft cocktails. Beat the rush. Build a legend.</p>
+      </div>
+      <div className="hud-group player-block">
+        <div>
+          <span className="metric-label">Bartender</span>
+          <span className="metric-value">{profile?.displayName ?? 'Guest Bartender'}</span>
+        </div>
+        <div className={`connection-status ${realtimeConnected ? 'online' : 'offline'}`}>
+          {realtimeConnected ? 'Live services connected' : 'Offline mode'}
+        </div>
       </div>
       <div className="hud-group metrics">
         <div>
@@ -57,6 +76,12 @@ export const GameHud = () => {
         <span className="metric-label">Unlocked Venues</span>
         <div className="venue-badges">{venueBadges}</div>
       </div>
+      {backendError && (
+        <div className="hud-group backend-error">
+          <span className="metric-label">Service Status</span>
+          <span className="error-message">{backendError}</span>
+        </div>
+      )}
     </header>
   )
 }

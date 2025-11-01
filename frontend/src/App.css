@@ -10,7 +10,7 @@
 
 .game-hud {
   display: grid;
-  grid-template-columns: 2fr 1.7fr 1.2fr 1.3fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   align-items: stretch;
   padding: 1.5rem 1.75rem;
@@ -40,6 +40,10 @@
   justify-content: center;
 }
 
+.hud-group.player-block {
+  gap: 0.5rem;
+}
+
 .hud-group.metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -59,6 +63,27 @@
   font-weight: 600;
 }
 
+.connection-status {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.connection-status.online {
+  background: rgba(76, 217, 100, 0.18);
+  border: 1px solid rgba(76, 217, 100, 0.45);
+  color: rgba(163, 255, 187, 0.95);
+}
+
+.connection-status.offline {
+  background: rgba(255, 95, 87, 0.15);
+  border: 1px solid rgba(255, 95, 87, 0.35);
+  color: rgba(255, 175, 170, 0.9);
+}
+
 .rush-timer.warning .metric-value {
   color: #ffb347;
 }
@@ -76,6 +101,18 @@
   border: 1px solid rgba(91, 185, 255, 0.4);
   font-size: 0.75rem;
   letter-spacing: 0.05em;
+}
+
+.hud-group.backend-error {
+  background: rgba(255, 107, 107, 0.08);
+  border-radius: 14px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.hud-group.backend-error .error-message {
+  font-size: 0.8rem;
+  color: rgba(255, 189, 189, 0.95);
 }
 
 .mode-selector {
@@ -355,6 +392,12 @@
   margin-top: 0.85rem;
 }
 
+.social-panel .leaderboard-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 200, 128, 0.85);
+}
+
 .social-panel h3 {
   margin: 0;
   font-size: 0.95rem;
@@ -391,6 +434,20 @@
 .social-panel button {
   margin-top: 0.75rem;
   width: 100%;
+}
+
+.matchmaking-status {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: rgba(223, 239, 255, 0.82);
+}
+
+.matchmaking-status button {
+  align-self: flex-start;
+  width: auto;
 }
 
 .order-queue li button {
